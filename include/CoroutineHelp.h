@@ -329,6 +329,9 @@ struct CoEvent<void> : public CoEventBase<void>
 class coro_scheduler
 {
 public:
+    coro_scheduler() {}
+    virtual ~coro_scheduler() {}
+
     struct schedule_operation
     {
         coro_scheduler* m_scheduler;
