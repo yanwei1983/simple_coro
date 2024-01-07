@@ -6,24 +6,30 @@ C++20 coroutine simple helper
 [中文](README.md)
 
 ## Origin
-After the introduction of coroutines in C++20, I have been waiting for the standard library to provide infrastructure for coroutines. Unfortunately, the big shots never consider the feelings of us coders. So, after referencing many articles, I crafted this simple "coroutine" library that I find useful for myself. It might not be everyone's cup of tea due to its basic functionality, but it serves its purpose well.
+After the introduction of coroutines in C++20, I have been waiting for the standard library to provide infrastructure for coroutines. 
+
+Unfortunately, the big shots never consider the feelings of us coders. 
+
+So, after referencing many articles, I crafted this simple "coroutine" library that I find useful for myself. 
+
+It might not be everyone's cup of tea due to its basic functionality, but it serves its purpose well.
 
 ## How to Use
-Modify an original function R (Args ...) to Task<R> (Args ...), and that function becomes a coroutine function.
+Modify an original function R (Args ...) to Task<R> (Args ...), and that function becomes a **coroutine** function.
 
-In my implementation, Task is divided into two types: sync_task and lazy_task. 
-- sync_task: Represents a function that runs immediately upon being called until the first suspension point.
-- lazy_task: Represents a function that suspends immediately upon being called.
+In my implementation, Task is divided into two types: **sync_task** and **lazy_task**. 
+- **sync_task**: Represents a function that runs immediately upon being called until the first suspension point.
+- **lazy_task**: Represents a function that suspends immediately upon being called.
 
-When a task is suspended, you need to use co_await to wait for a suspension point to return a result:
+When a task is suspended, you need to use **co_await** to wait for a suspension point to return a result:
 ```
 auto result = co_await other_lazy_func();
 ```
 
-When a function contains co_await, it must be a coroutine.
+When a function contains **co_await**, it must be a **coroutine**.
 
 ### Calling Coroutine Functions in a Regular Function
-If the result of the coroutine is not of interest, you can use sync_task to wrap the return value and avoid using co_await to execute the coroutine function in a regular function:
+If the result of the coroutine is not of interest, you can use **sync_task** to wrap the return value and avoid using **co_await** to execute the coroutine function in a regular function:
 ```
 sync_task<void> sync_func();
 
@@ -33,7 +39,7 @@ void normal_func()
 }
 ```
 
-You can also use sync_wait to wait:
+You can also use **sync_wait** to wait:
 ```
 void normal_func()
 {
@@ -43,7 +49,11 @@ void normal_func()
 ```
 
 ### Wrapping an Asynchronous Function as a Coroutine Function
-Here's an example similar to grpc's asynchronous callback. We declare a CoEvent object on the stack, put it into a lambda function, and then co_await this CoEvent object to achieve coroutine processing. When the asynchronous operation is complete and the function is called back, use resume to resume the coroutine from the suspension point:
+Here's an example similar to grpc's asynchronous callback. 
+
+We declare a **CoEvent** object on the stack, put it into a lambda function, and then co_await this CoEvent object to achieve coroutine processing. 
+
+When the asynchronous operation is complete and the function is called back, use resume to resume the coroutine from the suspension point:
 ```
 sync_task<grpc::Status> Co_Read(Resp* response)
 {
@@ -55,7 +65,9 @@ sync_task<grpc::Status> Co_Read(Resp* response)
 ```
 
 ### Switching a Coroutine Function to Another Thread
-We implemented a simple scheduler class to run tasks. coro_scheduler simply puts tasks in a list and waits for execution. coro_scheduler_single_thread opens a thread to wait for tasks to run:
+We implemented a simple scheduler class to run tasks. 
+- **coro_scheduler** simply puts tasks in a list and waits for execution. 
+- **coro_scheduler_single_thread** opens a thread to wait for tasks to run:
 ```
 void normal_func()
 {
