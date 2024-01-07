@@ -156,7 +156,7 @@ namespace task_detail
     };
 
 
-    thread_local coro_scheduler* s_scheduler = nullptr;
+    static thread_local coro_scheduler* s_scheduler = nullptr;
     inline coro_scheduler* get_current_scheduler()
     {
         return s_scheduler;
