@@ -15,7 +15,7 @@ class task;
 
 class coro_scheduler;
 static inline coro_scheduler* get_current_scheduler();
-static inline void set_current_scheduler(coro_scheduler* scheduler);
+static inline void            set_current_scheduler(coro_scheduler* scheduler);
 
 namespace task_detail
 {
@@ -56,6 +56,7 @@ namespace task_detail
     {
         using base = result_holder<T>;
         using base::m_data;
+
         template<typename U>
             requires std::convertible_to<U, T> && std::constructible_from<T, U>
         void return_value(U&& value) noexcept(std::is_nothrow_constructible_v<T, U>)
@@ -63,6 +64,16 @@ namespace task_detail
             if(base::is_detached())
                 return;
             base::set_value(std::forward<U>(value));
+        }
+
+        template<typename U>
+            requires std::convertible_to<U, T> && std::constructible_from<T, U>
+        std::suspend_always yield_value(U&& value) noexcept(std::is_nothrow_constructible_v<T, U>)
+        {
+            if(base::is_detached())
+                return {};
+            base::set_value(std::forward<U>(value));
+            return {};
         }
 
         T& get_or_throw() &
@@ -90,9 +101,9 @@ namespace task_detail
     template<>
     struct result<void> : public result_holder<void>
     {
-        void return_void() noexcept { set_value_void(); }
-
-        void get_or_throw()
+        void                return_void() noexcept { set_value_void(); }
+        std::suspend_always yield_void() noexcept { return {}; }
+        void                get_or_throw()
         {
             if(has_exception())
             {
@@ -155,9 +166,8 @@ namespace task_detail
         std::coroutine_handle<> m_next_coroutine;
     };
 
-
     static thread_local coro_scheduler* s_scheduler = nullptr;
-    inline coro_scheduler* get_current_scheduler()
+    inline coro_scheduler*              get_current_scheduler()
     {
         return s_scheduler;
     }
@@ -236,7 +246,21 @@ public:
     }
 
     bool is_ready() const noexcept { return m_handle == nullptr || m_handle.done(); }
+    bool move_next() noexcept
+    {
+        if(m_handle == nullptr)
+        {
+            return false;
+        }
 
+        if(m_handle.done())
+        {
+            return false;
+        }
+
+        m_handle.resume();
+        return true;
+    }
     decltype(auto) get() & { return m_handle.promise().get_or_throw(); }
     decltype(auto) get() && { return std::move(m_handle.promise()).get_or_throw(); }
 
@@ -342,11 +366,11 @@ public:
 
         bool await_ready() { return false; }
 
-        void await_suspend(std::coroutine_handle<> awaiting) 
-        { 
+        void await_suspend(std::coroutine_handle<> awaiting)
+        {
             if(m_scheduler != nullptr)
             {
-                m_scheduler->add_task(awaiting); 
+                m_scheduler->add_task(awaiting);
             }
         }
 
@@ -355,24 +379,21 @@ public:
 
     schedule_operation schedule() { return schedule_operation{this}; }
 
-    void schedule(std::coroutine_handle<> coro) 
-    { 
-        add_task(coro); 
-    }
+    void schedule(std::coroutine_handle<> coro) { add_task(coro); }
 
-    virtual void add_task(std::coroutine_handle<> coro) 
-    { 
+    virtual void add_task(std::coroutine_handle<> coro)
+    {
         std::unique_lock<std::mutex> lock(m_mutex);
-        m_task_list.push_back(coro); 
+        m_task_list.push_back(coro);
     }
 
     virtual void run_once()
     {
         std::unique_lock<std::mutex> lock(m_mutex);
-        auto task_list_copy = m_task_list;
+        auto                         task_list_copy = m_task_list;
         m_task_list.clear();
         lock.unlock();
-        
+
         while(task_list_copy.empty() == false)
         {
             auto coro = task_list_copy.front();
@@ -395,7 +416,7 @@ public:
     }
 
 protected:
-    std::mutex                   m_mutex;
+    std::mutex m_mutex;
 
     std::deque<std::coroutine_handle<>> m_task_list;
 };
@@ -416,11 +437,10 @@ public:
                 set_current_scheduler(this);
                 while(!m_stop_thread)
                 {
-                    run_once();                    
+                    run_once();
                 }
 
-                //exit
-                
+                // exit
             });
     }
 
@@ -469,9 +489,8 @@ public:
 protected:
     std::unique_ptr<std::thread> m_thread;
 
-    std::condition_variable      m_cond;
-    std::atomic<bool>            m_stop_thread = false;
-    
+    std::condition_variable m_cond;
+    std::atomic<bool>       m_stop_thread = false;
 };
 
 static inline coro_scheduler* get_current_scheduler()
@@ -530,7 +549,6 @@ static inline void sync_wait(Task_t&& task)
         schedule_on(new_scheduler, std::forward<Task_t>(task));
         new_scheduler.run_until_empty();
     }
-    
 }
 
 #endif /* COROUTINE_HELP_H */
