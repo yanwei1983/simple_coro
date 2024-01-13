@@ -136,3 +136,26 @@ struct TestST
 
 要调用 get_current_scheduler, 必须要使用 set_current_scheduler在执行线程中设置当前线程
 
+#### 如何运行到一半挂起,等待下次运行继续呢(generator/IEnumerable)
+
+```
+lazy_task<int> test_yield()
+{
+    for(int i = 0; i < 10; i++)
+    {
+        co_yield i; //返回i,并挂起本协程 依次返回0~9
+    }
+    co_return 10;
+}
+
+void func()
+{
+    auto caller = test_yield();
+    while(caller.move_next()) 
+    {
+        print("%d\n", caller.get());  //打印0~10
+    }
+}
+
+```
+这样你就可以在中途先挂起本协程, 然后每帧运行一次,直到运行结束

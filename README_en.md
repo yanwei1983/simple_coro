@@ -118,3 +118,30 @@ struct TestST
 **Please be extremely careful when dealing with asynchronous callbacks or callbacks across threads. If the calling thread has exited before co_return, it might lead to unexpected behavior. Be sure to handle such cases properly.**
 
 To call get_current_scheduler, you must use set_current_scheduler to set the current thread in the executing thread.
+
+
+#### How to Suspend Coroutine and Continue Execution Next Time (like Generator/IEnumerable)
+
+```cpp
+lazy_task<int> test_yield()
+{
+    for (int i = 0; i < 10; i++)
+    {
+        co_yield i; // Return i and suspend the coroutine, sequentially yielding 0 to 9
+    }
+    co_return 10;
+}
+
+void func()
+{
+    auto caller = test_yield();
+    while (caller.move_next())
+    {
+        print("%d\n", caller.get());  // Print 0 to 10
+        // Suspend the coroutine and resume in the next frame
+        // Continue running each frame until completion
+    }
+}
+```
+
+This way, you can suspend the coroutine, run it once per frame, and continue execution until completion.

@@ -112,6 +112,25 @@ sync_task<void> test_sync_task_2()
     co_return;
 }
 
+lazy_task<int> test_yield()
+{
+    for(int i = 0; i < 10; i++)
+    {
+        co_yield i;
+    }
+
+    co_return 10;
+}
+
+void call_test_yield()
+{
+    auto caller = test_yield();
+    while(caller.move_next())
+    {
+        printf("%d\n", caller.get());
+    }
+}
+
 int main(int argc, char** argv)
 {
     coro_scheduler task_list;
@@ -121,7 +140,8 @@ int main(int argc, char** argv)
     auto task2 = test_sync_task_2();
     printf("====================================\n");
 
-
+    
+    call_test_yield();
 
     auto lazy_task1 = test_lazy_task_1_1();
     auto lazy_task2 = test_lazy_task_1_1();
