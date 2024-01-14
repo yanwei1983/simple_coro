@@ -115,6 +115,8 @@ struct TestST
     }
 };
 ```
+
+**Please be extremely cautious when dealing with coroutines that involve switching execution threads. Pay close attention to the lifecycle of coroutine function parameters.**
 **Please be extremely careful when dealing with asynchronous callbacks or callbacks across threads. If the calling thread has exited before co_return, it might lead to unexpected behavior. Be sure to handle such cases properly.**
 
 To call get_current_scheduler, you must use set_current_scheduler to set the current thread in the executing thread.

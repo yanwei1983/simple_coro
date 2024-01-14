@@ -131,7 +131,7 @@ struct TestST
 };
 
 ```
-
+**请一定要小心这种切换执行线程的协程, 协程函数的入参请注意生命周期**
 **请一定要小心处理这种异步回调,或者跨线程回调的情况, 如果co_return的时候,调用线程已经嗝屁了, 应该是会在处理线程完成co_return**
 
 要调用 get_current_scheduler, 必须要使用 set_current_scheduler在执行线程中设置当前线程

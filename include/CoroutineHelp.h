@@ -398,7 +398,10 @@ public:
         {
             auto coro = task_list_copy.front();
             task_list_copy.pop_front();
-            coro.resume();
+            if(coro.done() == false)
+            {
+                coro.resume();
+            }
         }
     }
 
@@ -464,7 +467,10 @@ public:
         auto coro = m_task_list.front();
         m_task_list.pop_front();
         lock.unlock();
-        coro.resume();
+        if(coro.done() == false)
+        {
+            coro.resume();
+        }
     }
 
     virtual void add_task(std::coroutine_handle<> coro) override
